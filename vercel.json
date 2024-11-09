@@ -1,10 +1,12 @@
 {
   "version": 2,
   "builds": [
-    { "src": "wwizard/main.py", "use": "@vercel/python" }
+    { "src": "wwizard/main.py", "use": "@vercel/python" },
+    { "src": "*.html", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "wwizard/main.py" }
+    { "src": "/api/(.*)", "dest": "wwizard/main.py" },
+    { "src": "/", "dest": "index.html" }
   ],
   "env": {
     "APP_MODULE": "main:app"
