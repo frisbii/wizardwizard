@@ -1,10 +1,10 @@
 {
   "version": 2,
   "builds": [
-    { "src": "/wwizard/main.py", "use": "@vercel/poetry" }
+    { "src": "wwizard/main.py", "use": "@vercel/poetry" }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "/wwizard/main.py" }
+    { "src": "/(.*)", "dest": "wwizard/main.py" }
   ],
   "env": {
     "APP_MODULE": "main:app"
