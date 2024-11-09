@@ -1,7 +1,7 @@
 {
   "version": 2,
   "builds": [
-    { "src": "wwizard/main.py", "use": "@black-raven/vercel-poetry" }
+    { "src": "wwizard/main.py", "use": "@vercel/poetry" }
   ],
   "routes": [
     { "src": "/(.*)", "dest": "/main.py" }
