@@ -1,4 +1,4 @@
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::IntoPyDict};
 
 use std::io;
 
@@ -82,15 +82,6 @@ impl App {
     
             return to_return;
         });
-
-        let text2 = String::from("beep beep");
-
-        let emergency = Message{
-            text: text2,
-            msg_type: t.clone(),
-        };
-
-        return emergency;
     }
 
     // (called by main)
