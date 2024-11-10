@@ -141,8 +141,6 @@ fn parse_directive(yaml_directive: &Yaml) -> Directive {
 }
 
 fn parse_action(yaml_action: &Yaml) -> Action {
-    println!("{:#?}", yaml_action);
-
     let mut title_details_mapping: Hash = yaml_action
         .expect_hash("Action should be a YAML mapping.")
         .clone();
@@ -158,8 +156,6 @@ fn parse_action(yaml_action: &Yaml) -> Action {
     let (yaml_condition, yaml_directives) = condition_directive_mapping
         .pop_front()
         .expect("Action should have a condition-directive pair.");
-
-    println!("{:#?}", yaml_directives);
 
     let condition_string = yaml_condition.expect_string("Condition should be a string.");
 

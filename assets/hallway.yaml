@@ -1,0 +1,7 @@
+description: You are in a hallway. nuff said.
+actions:
+- recall information from that letter:
+    didReadLetter:
+    - set hasDeepInsightsAndKnowledge true
+    - goto hell
+

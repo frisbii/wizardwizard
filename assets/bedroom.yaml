@@ -1,15 +1,9 @@
 description: This is your bedroom. It is painted in pastel colors.  It is somewhat small, but very tidy, and a gentle breeze wafts through your open window. You have a bookshelf filled with history books and a box full of various useless knicknacks and glass baubles. There is a lamp on your bedside table shaped like a star, and your favorite pen is there too. You also have several posters covering your walls of famous mages.
 
 actions:
-- exit: enter hallway
-- read letter: dialogue starting-letter
-- close window:
-    requires:
-    - window open
-- open drawer: description: Your drawer is nearly empty, except for a small key.
-- collect key:
-    outcome: collect bedroom-drawer-key
-    requires:
-    - bedroom/open drawer
-    - awake
-    - has hands
+- exit:
+    always:
+    - goto hallway
+- read letter:
+    always:
+    - set didReadLetter true
