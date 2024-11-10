@@ -1,32 +1,34 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alphanumeric1, char, space0};
+use nom::character::complete::{alphanumeric1, char};
 use nom::combinator::all_consuming;
-use nom::sequence::{preceded, separated_pair, tuple};
+use nom::sequence::{preceded, separated_pair};
 use nom::IResult;
+use std::fs;
 use yaml_rust2::{yaml::Hash, Yaml, YamlLoader};
 
 #[derive(Debug)]
-struct Location {
-    actions: Vec<Action>,
-    description: String,
+pub struct Location {
+    pub title: String,
+    pub actions: Vec<Action>,
+    pub description: String,
 }
 
 #[derive(Debug)]
-struct Action {
-    title: String,
-    condition: Condition,
-    directives: Vec<Directive>,
+pub struct Action {
+    pub title: String,
+    pub condition: Condition,
+    pub directives: Vec<Directive>,
 }
 
 #[derive(Debug)]
-enum Directive {
+pub enum Directive {
     SetProperty(PropertyId, PropertyValue),
     GoTo(LocationId),
 }
 
 #[derive(Debug)]
-enum Condition {
+pub enum Condition {
     And(Box<Condition>, Box<Condition>),
     Or(Box<Condition>, Box<Condition>),
     Not(Box<Condition>),
@@ -34,12 +36,12 @@ enum Condition {
 }
 
 #[derive(Debug)]
-struct ItemId(u32);
+pub struct ItemId(pub u32);
 #[derive(Debug)]
-struct PropertyId(String);
-type PropertyValue = bool;
+pub struct PropertyId(pub String);
+pub type PropertyValue = bool;
 #[derive(Debug)]
-struct LocationId(String);
+pub struct LocationId(pub String);
 
 pub trait YamlExt {
     fn expect_hash<'a>(&'a self, message: &str) -> &'a Hash;
@@ -178,7 +180,7 @@ fn parse_action(yaml_action: &Yaml) -> Action {
     }
 }
 
-fn parse_location(source: &str) -> Location {
+fn parse_location(source: &str, title: &str) -> Location {
     let docs = YamlLoader::load_from_str(source).expect("Location file should be in YAML format.");
     let doc = &docs[0];
 
@@ -201,9 +203,28 @@ fn parse_location(source: &str) -> Location {
         .collect::<Vec<Action>>();
 
     Location {
+        title: title.into(),
         actions,
         description: description.into(),
     }
+}
+
+fn load_locations() -> Vec<Location> {
+    let paths = fs::read_dir("assets/").unwrap();
+    paths
+        .map(|path_result| {
+            let path = path_result.expect("Path should exist.").path();
+            parse_location(
+                fs::read_to_string(&path)
+                    .expect("Should be able to read from location file.")
+                    .as_str(),
+                path.file_stem()
+                    .expect("Location file should have a name.")
+                    .to_str()
+                    .expect("Location file name should be valid."),
+            )
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -221,6 +242,7 @@ actions:
     - set isDoorOpen true
     - goto nextRoom
 ";
-        println!("{:#?}", parse_location(s));
+        let locations = load_locations();
+        println!("{:#?}", locations);
     }
 }
