@@ -1,3 +1,5 @@
+use pyo3::prelude::*;
+
 use std::io;
 
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, MouseEventKind};
@@ -52,6 +54,43 @@ impl App {
         // reset input box for next input
         self.input_str.clear();
         self.reset_cursor();
+
+        let to_post = App::call_ai(msg.clone(), t);
+
+        self.post_message(to_post);
+
+    }
+
+    fn call_ai(msg: Message, t: MessageType) -> Message{
+
+        // call AI stuff here
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+        
+        Python::with_gil(|py| {
+            let module = PyModule::new(py, "ai");
+
+            let question = msg.clone();
+            let actions = vec!["read letter", "open door", "break window"];
+
+            let result = module.call1("generateAction", (actions, question))?.extract(py)?;
+
+            let to_return = Message{
+                text: result,
+                msg_type: t.clone(),
+            };
+    
+            return to_return;
+        });
+
+        let text2 = String::from("beep beep");
+
+        let emergency = Message{
+            text: text2,
+            msg_type: t.clone(),
+        };
+
+        return emergency;
     }
 
     // (called by main)

@@ -7,3 +7,4 @@ edition = "2021"
 crossterm = "0.28.1"
 ratatui = "0.29.0"
 tui-textarea = "0.7.0"
+pyo3 = { git = "https://github.com/pyo3/pyo3", features = ["extension-module"] }
