@@ -1,20 +1,17 @@
 use std::io;
 
-mod game;
 mod app;
+mod game;
+mod parser;
 mod ui;
 
 use ratatui::DefaultTerminal;
 
-use crate::{
-    app::App,
-    ui::ui
-};
+use crate::{app::App, ui::ui};
 
 fn main() -> io::Result<()> {
-
     // initialize new terminal in the alternate screen buffer
-    let mut terminal = ratatui::init();     
+    let mut terminal = ratatui::init();
     terminal.clear()?;
 
     // create the app state, start program loop
@@ -23,13 +20,11 @@ fn main() -> io::Result<()> {
 
     // restore the terminal's original state
     ratatui::restore();
-    
-    res
 
+    res
 }
 
 fn run_app(terminal: &mut DefaultTerminal, app: &mut App) -> io::Result<()> {
-    
     // run until quit
     // two steps to the application loop
     //      1)  redraw the frame
@@ -42,5 +37,5 @@ fn run_app(terminal: &mut DefaultTerminal, app: &mut App) -> io::Result<()> {
     }
 
     Ok(())
-
 }
+

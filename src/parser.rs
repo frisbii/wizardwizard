@@ -105,8 +105,6 @@ fn parse_condition(input: &str) -> IResult<&str, Condition> {
     alt((
         all_consuming(parse_is_property_true),
         all_consuming(parse_not),
-        all_consuming(parse_or),
-        all_consuming(parse_and),
     ))(input)
 }
 
@@ -219,11 +217,10 @@ description: Lorem ipsum dolor sit amet.
 
 actions:
 - unlock door:
-    hasKey & !isStupid:
+    hasKey:
     - set isDoorOpen true
     - goto nextRoom
 ";
-        //println!("{:#?}", parse_location(s));
-        println!("{:#?}", parse_condition("test & !test"));
+        println!("{:#?}", parse_location(s));
     }
 }
