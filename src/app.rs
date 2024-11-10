@@ -3,6 +3,21 @@ use std::io;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, MouseEventKind};
 use ratatui::widgets::ListState;
 
+#[derive(PartialEq, Clone)]
+// determines if a message was sent by the user or the game (theming)
+pub enum MessageType {
+    User,
+    Game,
+    Jesse
+}
+
+// stores a message that is to be displayed in the text_area of the ui
+#[derive(Clone)]
+pub struct Message {
+    pub text: String,
+    pub msg_type: MessageType
+}
+
 // stores the state of the program
 pub struct App {
     pub exit: bool,
@@ -38,6 +53,19 @@ impl App {
     // when input box is submitted, clear input and do something with the input_str
     fn submit_input(&mut self, t: MessageType) {
 
+        if self.input_str == "quit" {
+            self.exit();
+            return;
+        }
+        if self.input_str == "exit" {
+            let msg = Message {
+                text: "go away jesse".to_string(),
+                msg_type: MessageType::Jesse
+            };
+            self.post_message(msg);
+            return;
+        }
+
         // ############################################################################################################
         // TODO: CHANGE THIS TO INTERFACE WITH OUR AI STUFF; MAYBE DEDICATED RUST MODUlE FOR AI INTERFACING?
         //       WHATEVER WE DO, THE RESPONSE MESSAGE SHOULD BE PASSED TO post_message();
@@ -62,7 +90,6 @@ impl App {
             // on key press
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                 match key_event.code {
-                    KeyCode::Esc => self.exit(),
 
                     KeyCode::Up    => self.messages_scroll_up(),
                     KeyCode::Down  => self.messages_scroll_down(),
@@ -180,16 +207,3 @@ impl App {
 
 }
 
-#[derive(PartialEq, Clone)]
-// determines if a message was sent by the user or the game (theming)
-pub enum MessageType {
-    User,
-    Game
-}
-
-// stores a message that is to be displayed in the text_area of the ui
-#[derive(Clone)]
-pub struct Message {
-    pub text: String,
-    pub msg_type: MessageType
-}
