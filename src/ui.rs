@@ -49,12 +49,11 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
 
     let mut messages: Vec<Text> = vec![];
     for message in app.message_history.clone().into_iter().rev() {
-        let color = if message.msg_type == MessageType::Game {
-            Color::LightCyan
-        } else {
-            Color::White
+        let color = match message.msg_type {
+            MessageType::User => Color::White,
+            MessageType::Game => Color::LightCyan,
+            MessageType::Jesse => Color::Red
         };
-
        let text = wrap_line(message.text, inner_text_area.width.into());
 
         messages.push(Text::from(format!("{}\n\n", text)).style(color));
