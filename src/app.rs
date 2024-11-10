@@ -11,7 +11,8 @@ pub struct App {
     pub message_scroll_state: ListState,
 
     pub input_str: String,
-    pub input_char_index: usize
+    pub input_char_index: usize,
+    pub input_width: usize
 }
 
 impl App {
@@ -24,9 +25,36 @@ impl App {
             message_scroll_state: ListState::default(),
             input_str: String::default(),
             input_char_index: usize::default(),
+            input_width: usize::default()
         }
     }
 
+    // ############################################################################################################
+    // TODO: OUTSIDE INTERFACES SHOULD POST NEW RESPONSES USING THIS
+    pub fn post_message(&mut self, message: Message) {
+        self.message_history.push(message);
+    }
+    
+    // when input box is submitted, clear input and do something with the input_str
+    fn submit_input(&mut self, t: MessageType) {
+
+        // ############################################################################################################
+        // TODO: CHANGE THIS TO INTERFACE WITH OUR AI STUFF; MAYBE DEDICATED RUST MODUlE FOR AI INTERFACING?
+        //       WHATEVER WE DO, THE RESPONSE MESSAGE SHOULD BE PASSED TO post_message();
+        let msg = Message {
+            text: self.input_str.clone(),
+            msg_type: t,
+            
+        };
+        self.post_message(msg);
+        // ############################################################################################################
+        
+        // reset input box for next input
+        self.input_str.clear();
+        self.reset_cursor();
+    }
+
+    // (called by main)
     // update state based on terminal events
     pub fn handle_terminal_events(&mut self) -> io::Result<()> {
         match event::read()? {
@@ -39,7 +67,14 @@ impl App {
                     KeyCode::Up    => self.messages_scroll_up(),
                     KeyCode::Down  => self.messages_scroll_down(),
 
-                    KeyCode::Char(c)        => self.enter_char(c),
+                    KeyCode::Char(c)        => {
+                        if self.input_str.len() > self.input_width {
+                            // TODO: we should really permit this. shouldn't be that hard to scroll horizontally with cursor
+                            ()
+                        } else {
+                            self.enter_char(c)
+                        }
+                    },
                     KeyCode::Left               => self.move_cursor_left(), 
                     KeyCode::Right              => self.move_cursor_right(), 
                     KeyCode::Backspace          => self.delete_char(),
@@ -79,47 +114,29 @@ impl App {
         self.exit = true;
     }
 
-    pub fn post_message(&mut self, message: Message) {
-        self.message_history.push(message);
-    }
-
-    pub fn submit_input(&mut self, t: MessageType) {
-
-        let msg = Message {
-            text: self.input_str.clone(),
-            msg_type: t,
-        };
-        self.post_message(msg);
-
-        self.input_str.clear();
-        self.reset_cursor();
-
-    }
-
-    pub fn messages_scroll_down(&mut self) {
+    // ===================================================================================
+    // ===================================================================================
+    // INPUT BOX LOGIC: TAKEN FROM RATATUI EXAMPLES REPOSITORY
+    fn messages_scroll_down(&mut self) {
         *self.message_scroll_state.offset_mut() = self.message_scroll_state.offset().saturating_sub(1);
     }
-    
-    pub fn messages_scroll_up(&mut self) {
+
+    fn messages_scroll_up(&mut self) {
         *self.message_scroll_state.offset_mut() = self.message_scroll_state.offset().saturating_add(1);
     }
-
     fn move_cursor_left(&mut self) {
         let cursor_moved_left = self.input_char_index.saturating_sub(1);
         self.input_char_index = self.clamp_cursor(cursor_moved_left);
     }
-
     fn move_cursor_right(&mut self) {
         let cursor_moved_right = self.input_char_index.saturating_add(1);
         self.input_char_index = self.clamp_cursor(cursor_moved_right);
     }
-
     fn enter_char(&mut self, new_char: char) {
         let index = self.byte_index();
         self.input_str.insert(index, new_char);
         self.move_cursor_right();
     }
-
     /// Returns the byte index based on the character position.
     ///
     /// Since each character in a string can be contain multiple bytes, it's necessary to calculate
@@ -131,7 +148,6 @@ impl App {
             .nth(self.input_char_index)
             .unwrap_or(self.input_str.len())
     }
-
     fn delete_char(&mut self) {
         let is_not_cursor_leftmost = self.input_char_index != 0;
         if is_not_cursor_leftmost {
@@ -153,24 +169,25 @@ impl App {
             self.move_cursor_left();
         }
     }
-
     fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
         new_cursor_pos.clamp(0, self.input_str.chars().count())
     }
-
     fn reset_cursor(&mut self) {
         self.input_char_index = 0;
     }
-
+    // ===================================================================================
+    // ===================================================================================
 
 }
 
 #[derive(PartialEq, Clone)]
+// determines if a message was sent by the user or the game (theming)
 pub enum MessageType {
     User,
     Game
 }
 
+// stores a message that is to be displayed in the text_area of the ui
 #[derive(Clone)]
 pub struct Message {
     pub text: String,
