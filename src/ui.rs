@@ -1,5 +1,5 @@
 use ratatui::{
-    buffer::Buffer, layout::{Constraint, Direction, Flex, Layout, Rect}, style::{Color, Style, Stylize}, symbols::border::Set, text::{Span, Text}, widgets::{Block, BorderType, Borders, List, ListDirection, Paragraph, Widget}, DefaultTerminal, Frame
+    layout::{Constraint, Layout, Position, Rect}, style::{Color, Style, Stylize}, symbols::border::Set, text::Text, widgets::{Block, Borders, List, ListDirection, Paragraph}, Frame
 };
 
 use crate::app::{App, MessageType};
@@ -25,7 +25,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     let [
         text_area, 
         input_area
-    ] = Layout::vertical([Constraint::Percentage(70), Constraint::Fill(1)]).areas(area_ctr);
+    ] = Layout::vertical([Constraint::Min(0), Constraint::Max(3)]).areas(area_ctr);
 
 
     // =========================================================================================
@@ -47,17 +47,31 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
 
     let inner_text_area = text_area_block.inner(text_area);
 
-    let mut text: Vec<Text> = vec![];
+    let mut messages: Vec<Text> = vec![];
     for message in app.message_history.clone().into_iter().rev() {
         let color = if message.msg_type == MessageType::Game {
             Color::LightCyan
         } else {
             Color::White
         };
-        text.push(Text::from(format!("{}\n\n", message.text.clone())).style(color));
+
+        /* let mut text = message.text.clone();
+        if text.len() > inner_text_area.width.into() {
+            let mut i: u16 = 0;
+            for c in (&text[..(inner_text_area.width.into())]).chars().rev() {
+                if c == ' ' {
+
+                }
+                i += 1;
+            }
+        } */
+
+       let text = wrap_line(message.text, inner_text_area.width.into());
+
+        messages.push(Text::from(format!("{}\n\n", text)).style(color));
     }
 
-    let messages = List::new(text).direction(ListDirection::BottomToTop);
+    let messages = List::new(messages).direction(ListDirection::BottomToTop);
 
     frame.render_widget(text_area_block, text_area);
     frame.render_stateful_widget(messages, inner_text_area, &mut app.message_scroll_state);
@@ -65,9 +79,36 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
     // =========================================================================================
     // INPUT AREA
 
-    let input_area_block = Block::bordered().border_style(Style::new().bg(Color::Black).fg(Color::LightBlue));
+    let iw = Paragraph::new(app.input_str.as_str())
+        .white()
+        .block(
+            Block::bordered()
+                .border_style(Style::new().bg(Color::Black).fg(Color::LightBlue))
+    );
+    frame.set_cursor_position(Position::new(
+        input_area.x + app.input_char_index as u16 + 1,
+        input_area.y + 1
+    ));
 
-    
+    frame.render_widget(iw, input_area);
+}
 
-    frame.render_widget(input_area_block, input_area);
+fn wrap_line(text: String, width: usize) -> String {
+    if text.len() <= width {
+        return text;
+    } else {
+        let mut s = "".to_string();
+        for (i, c) in text[..width].chars().rev().enumerate() {
+            if c == ' ' {
+                s.push_str(&text[..(width - i)]);
+                s.push('\n');
+                s.push_str(&wrap_line(text[(width - i)..].to_string(), width));
+                return s;
+            }
+        }
+        s.push_str(&text[..(width)]);
+        s.push('\n');
+        s.push_str(&wrap_line(text[(width)..].to_string(), width));
+        return s;
+    }
 }

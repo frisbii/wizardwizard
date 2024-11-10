@@ -4,7 +4,6 @@ mod game;
 mod app;
 mod ui;
 
-use app::{Message, MessageType};
 use ratatui::DefaultTerminal;
 
 use crate::{
@@ -20,18 +19,6 @@ fn main() -> io::Result<()> {
 
     // create the app state, start program loop
     let mut app = App::new();
-
-    let m = Message {
-        text: "adfa".to_string(),
-        msg_type: MessageType::Game,
-    };
-    app.post_message(m);
-    let m = Message {
-        text: "asdfacvzcxv THIS SIF A F AEFLASDKF AV ERY LONG STRIN GYAYAFYASDFASYF".to_string(),
-        msg_type: MessageType::User,
-    };
-    app.post_message(m);
-
     let res = run_app(&mut terminal, &mut app);
 
     // restore the terminal's original state

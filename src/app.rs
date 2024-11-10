@@ -1,13 +1,17 @@
 use std::io;
 
-use crossterm::event::{self, Event, KeyCode, KeyEventKind, MouseEvent, MouseEventKind};
-use ratatui::widgets::{List, ListState, Scrollbar, ScrollbarState};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind, MouseEventKind};
+use ratatui::widgets::ListState;
 
 // stores the state of the program
 pub struct App {
     pub exit: bool,
+
     pub message_history: Vec<Message>,
-    pub message_scroll_state: ListState
+    pub message_scroll_state: ListState,
+
+    pub input_str: String,
+    pub input_char_index: usize
 }
 
 impl App {
@@ -17,7 +21,9 @@ impl App {
         App {
             exit: false,
             message_history: vec![],
-            message_scroll_state: ListState::default()
+            message_scroll_state: ListState::default(),
+            input_str: String::default(),
+            input_char_index: usize::default(),
         }
     }
 
@@ -33,6 +39,20 @@ impl App {
                     KeyCode::Up    => self.messages_scroll_up(),
                     KeyCode::Down  => self.messages_scroll_down(),
 
+                    KeyCode::Char(c)        => self.enter_char(c),
+                    KeyCode::Left               => self.move_cursor_left(), 
+                    KeyCode::Right              => self.move_cursor_right(), 
+                    KeyCode::Backspace          => self.delete_char(),
+                    KeyCode::Enter              => {
+                        if self.input_str.is_empty() {
+                            ()
+                        } else {
+                            self.submit_input(MessageType::User);
+                        }
+                    },
+
+                    // TO DELETE: TEST CODE ONLY
+                    KeyCode::Delete => self.submit_input(MessageType::Game),
                     
                     _ => ()
                 }
@@ -63,6 +83,19 @@ impl App {
         self.message_history.push(message);
     }
 
+    pub fn submit_input(&mut self, t: MessageType) {
+
+        let msg = Message {
+            text: self.input_str.clone(),
+            msg_type: t,
+        };
+        self.post_message(msg);
+
+        self.input_str.clear();
+        self.reset_cursor();
+
+    }
+
     pub fn messages_scroll_down(&mut self) {
         *self.message_scroll_state.offset_mut() = self.message_scroll_state.offset().saturating_sub(1);
     }
@@ -70,6 +103,65 @@ impl App {
     pub fn messages_scroll_up(&mut self) {
         *self.message_scroll_state.offset_mut() = self.message_scroll_state.offset().saturating_add(1);
     }
+
+    fn move_cursor_left(&mut self) {
+        let cursor_moved_left = self.input_char_index.saturating_sub(1);
+        self.input_char_index = self.clamp_cursor(cursor_moved_left);
+    }
+
+    fn move_cursor_right(&mut self) {
+        let cursor_moved_right = self.input_char_index.saturating_add(1);
+        self.input_char_index = self.clamp_cursor(cursor_moved_right);
+    }
+
+    fn enter_char(&mut self, new_char: char) {
+        let index = self.byte_index();
+        self.input_str.insert(index, new_char);
+        self.move_cursor_right();
+    }
+
+    /// Returns the byte index based on the character position.
+    ///
+    /// Since each character in a string can be contain multiple bytes, it's necessary to calculate
+    /// the byte index based on the index of the character.
+    fn byte_index(&self) -> usize {
+        self.input_str
+            .char_indices()
+            .map(|(i, _)| i)
+            .nth(self.input_char_index)
+            .unwrap_or(self.input_str.len())
+    }
+
+    fn delete_char(&mut self) {
+        let is_not_cursor_leftmost = self.input_char_index != 0;
+        if is_not_cursor_leftmost {
+            // Method "remove" is not used on the saved text for deleting the selected char.
+            // Reason: Using remove on String works on bytes instead of the chars.
+            // Using remove would require special care because of char boundaries.
+
+            let current_index = self.input_char_index;
+            let from_left_to_current_index = current_index - 1;
+
+            // Getting all characters before the selected character.
+            let before_char_to_delete = self.input_str.chars().take(from_left_to_current_index);
+            // Getting all characters after selected character.
+            let after_char_to_delete = self.input_str.chars().skip(current_index);
+
+            // Put all characters together except the selected one.
+            // By leaving the selected one out, it is forgotten and therefore deleted.
+            self.input_str = before_char_to_delete.chain(after_char_to_delete).collect();
+            self.move_cursor_left();
+        }
+    }
+
+    fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
+        new_cursor_pos.clamp(0, self.input_str.chars().count())
+    }
+
+    fn reset_cursor(&mut self) {
+        self.input_char_index = 0;
+    }
+
 
 }
 
